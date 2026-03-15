@@ -11,6 +11,14 @@ Inspired by research on visual ergonomics, this extension applies a noise textur
 - **Quick Settings Menu:** Easily toggle the effect on or off from the top-right GNOME system panel.
 - **Hot-Swappable Textures:** Switch between different textures on the fly without needing to restart the GNOME Shell, just replace the noise.png image.
 
+#### Filter Off
+
+![filter_off](./README_images/filter_off.png)
+
+#### Filter On
+
+![filter_on](./README_images/filter_on.png)
+
 ---
 
 ### 📥 Installation

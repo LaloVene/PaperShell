@@ -1,6 +1,10 @@
 .papersrc-overlay {
   background-image: url("noise.png");
-  background-size: cover;
-  background-position: center;
-  opacity: 0.15;
+  background-repeat: repeat;
+
+  /* Lower this number (e.g., 256px) for a "finer" grain, increase it (e.g., 1024px) for a "larger" grain. */
+  background-size: 512px;
+
+  /* Background starts at the top-left */
+  background-position: 0 0;
 }

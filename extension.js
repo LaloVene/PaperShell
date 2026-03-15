@@ -47,7 +47,8 @@ const Indicator = GObject.registerClass(
       });
       sliderItem.add_child(sliderLabel);
 
-      this._slider = new Slider.Slider(0.15); // Default to 15% opacity
+      // Default value 0.3 results in 15% actual opacity (0.3 * 0.5)
+      this._slider = new Slider.Slider(0.3);
       this._slider.x_expand = true;
       this._slider.connect("notify::value", () => {
         this._extension.setOpacity(this._slider.value);
@@ -57,16 +58,15 @@ const Indicator = GObject.registerClass(
       this.menu.addMenuItem(sliderItem);
     }
 
-    getOpacity() {
+    getSliderValue() {
       return this._slider.value;
     }
   },
 );
 
-export default class PaperSrcExtension extends Extension {
+export default class PaperShellExtension extends Extension {
   enable() {
     this._overlay = null;
-    this._monitorId = null;
 
     // Pass the extension instance to the indicator so they can communicate
     this._indicator = new Indicator(this);
@@ -92,43 +92,38 @@ export default class PaperSrcExtension extends Extension {
     this._overlay = new St.Widget({
       style_class: "papersrc-overlay",
       reactive: false, // Essential: lets you click through it
+      can_focus: false,
       x: 0,
       y: 0,
     });
 
-    Main.layoutManager.uiGroup.add_child(this._overlay);
-
-    this._updateSize();
-    this._monitorId = Main.layoutManager.connect(
-      "monitors-changed",
-      this._updateSize.bind(this),
+    // Binds the overlay to all monitors
+    this._overlay.add_constraint(
+      new Clutter.BindConstraint({
+        source: global.stage,
+        coordinate: Clutter.BindCoordinate.ALL,
+      }),
     );
 
+    Main.layoutManager.addChrome(this._overlay);
+
     // Sync the overlay's initial opacity with the slider's value
-    this.setOpacity(this._indicator.getOpacity());
+    this.setOpacity(this._indicator.getSliderValue());
   }
 
   disableOverlay() {
-    if (this._monitorId) {
-      Main.layoutManager.disconnect(this._monitorId);
-      this._monitorId = null;
-    }
     if (this._overlay) {
       this._overlay.destroy();
       this._overlay = null;
     }
   }
 
-  _updateSize() {
-    if (this._overlay) {
-      this._overlay.set_size(global.stage.width, global.stage.height);
-    }
-  }
-
   setOpacity(value) {
     if (this._overlay) {
-      // Clutter opacity maps 0.0-1.0 to an integer from 0-255
-      this._overlay.opacity = Math.floor(value * 255);
+      // SAFETY CAP: The slider (0.0 to 1.0) is multiplied by 0.5
+      // This prevents the screen from becoming 100% opaque/black.
+      let safeOpacity = value * 0.5;
+      this._overlay.opacity = Math.floor(safeOpacity * 255);
     }
   }
 }

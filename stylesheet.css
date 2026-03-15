@@ -1,0 +1,6 @@
+.papersrc-overlay {
+  background-image: url("noise.png");
+  background-size: cover;
+  background-position: center;
+  opacity: 0.15;
+}

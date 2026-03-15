@@ -1,0 +1,7 @@
+{
+  "uuid": "papershell@lalovene.github.com",
+  "name": "PaperShell",
+  "description": "Adds a subtle noise texture to reduce eye strain.",
+  "shell-version": ["49"],
+  "url": "https://github.com/LaloVene/PaperShell"
+}

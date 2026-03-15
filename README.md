@@ -1,4 +1,4 @@
-# PaperShell 📜✨
+# PaperShell 📜
 
 A GNOME 49 Shell Extension designed to enhance screen readability and reduce eye strain by adding a subtle, customizable texture overlay to your entire desktop.
 
@@ -41,4 +41,4 @@ _(Alternatively, enable it using the "Extensions" GUI app)._
 This extension is a Linux/GNOME port inspired by the original open-source Windows desktop application.
 
 - **Original Windows App Concept:** Created by Umer Hamaaz ([Umer-Hamaaz/Papersrc](https://github.com/Umer-Hamaaz/Papersrc)).
-- **Default Noise Texture:** Photography provided by [Josiah Rock on Unsplash](https://www.google.com/search?q=https://unsplash.com/photos/9PB_p-qXH7c).
+- **Default Noise Texture:** Photography provided by [Josiah Rock on Unsplash](https://unsplash.com/@josiahrock).

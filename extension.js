@@ -6,59 +6,44 @@ import {
   Extension,
   gettext as _,
 } from "resource:///org/gnome/shell/extensions/extension.js";
-import * as PanelMenu from "resource:///org/gnome/shell/ui/panelMenu.js";
-import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
-import * as Slider from "resource:///org/gnome/shell/ui/slider.js";
+import {
+  QuickToggle,
+  SystemIndicator,
+} from "resource:///org/gnome/shell/ui/quickSettings.js";
 
-const Indicator = GObject.registerClass(
-  class Indicator extends PanelMenu.Button {
+// 1. Create the Quick Settings Toggle
+const PaperShellToggle = GObject.registerClass(
+  class PaperShellToggle extends QuickToggle {
     _init(extension) {
-      super._init(0.0, _("PaperShell Indicator"));
+      super._init({
+        title: _("PaperShell"),
+        iconName: "view-reveal-symbolic",
+        toggleMode: true,
+      });
       this._extension = extension;
 
-      // Icon for the panel indicator
-      this.add_child(
-        new St.Icon({
-          icon_name: "view-reveal-symbolic",
-          style_class: "system-status-icon",
-        }),
-      );
+      // Bind the toggle state to the GSettings
+      this._extension._settings.bind("enabled-state", this, "checked", 0);
 
-      // Toggle for enabling/disabling the texture overlay
-      this._toggle = new PopupMenu.PopupSwitchMenuItem(
-        _("Enable Texture"),
-        true,
-      );
-      this._toggle.connect("toggled", (item, state) => {
-        if (state) {
+      // Listen for clicks
+      this.connect("clicked", () => {
+        if (this.checked) {
           this._extension.enableOverlay();
         } else {
           this._extension.disableOverlay();
         }
       });
-      this.menu.addMenuItem(this._toggle);
-
-      // Opacity slider
-      let sliderItem = new PopupMenu.PopupBaseMenuItem({ activate: false });
-      let sliderLabel = new St.Label({
-        text: _("Opacity: "),
-        y_align: Clutter.ActorAlign.CENTER,
-      });
-      sliderItem.add_child(sliderLabel);
-
-      this._slider = new Slider.Slider(0.3); // Default 15% (0.3 * 0.5)
-      this._slider.x_expand = true;
-      this._slider.connect("notify::value", () => {
-        this._extension.setOpacity(this._slider.value);
-      });
-
-      sliderItem.add_child(this._slider);
-      this.menu.addMenuItem(sliderItem);
     }
+  },
+);
 
-    getSliderValue() {
-      return this._slider.value;
+// Toggle Indicator
+const PaperShellIndicator = GObject.registerClass(
+  class PaperShellIndicator extends SystemIndicator {
+    _init(extension) {
+      super._init();
+      this.quickSettingsItems.push(new PaperShellToggle(extension));
     }
   },
 );
@@ -66,13 +51,21 @@ const Indicator = GObject.registerClass(
 export default class PaperShellExtension extends Extension {
   enable() {
     this._overlay = null;
-    this._indicator = null;
     this._overviewShowingId = null;
     this._overviewHidingId = null;
+    this._settingsChangedId = null;
 
-    // Pass the extension instance to the indicator so they can communicate
-    this._indicator = new Indicator(this);
-    Main.panel.addToStatusArea(this.uuid, this._indicator);
+    // Load settings database
+    this._settings = this.getSettings();
+
+    // Setup Quick Settings
+    this._indicator = new PaperShellIndicator(this);
+    Main.panel.statusArea.quickSettings.addExternalIndicator(this._indicator);
+
+    // Listen to changes from the Settings app
+    this._settingsChangedId = this._settings.connect("changed::opacity", () => {
+      this.setOpacity(this._settings.get_double("opacity"));
+    });
 
     // Hide the overlay when entering the overview: allows for drag and drop
     this._overviewShowingId = Main.overview.connect("showing", () => {
@@ -80,14 +73,15 @@ export default class PaperShellExtension extends Extension {
     });
 
     this._overviewHidingId = Main.overview.connect("hiding", () => {
-      // Only show it again if the toggle is actually turned ON
-      if (this._overlay && this._indicator._toggle.state) {
+      if (this._overlay && this._settings.get_boolean("enabled-state")) {
         this._overlay.show();
       }
     });
 
-    // Enable the overlay by default when the extension starts
-    this.enableOverlay();
+    // Enable overlay if the saved state is enabled
+    if (this._settings.get_boolean("enabled-state")) {
+      this.enableOverlay();
+    }
   }
 
   disable() {
@@ -99,6 +93,10 @@ export default class PaperShellExtension extends Extension {
       Main.overview.disconnect(this._overviewHidingId);
       this._overviewHidingId = null;
     }
+    if (this._settingsChangedId) {
+      this._settings.disconnect(this._settingsChangedId);
+      this._settingsChangedId = null;
+    }
 
     this.disableOverlay();
 
@@ -106,6 +104,8 @@ export default class PaperShellExtension extends Extension {
       this._indicator.destroy();
       this._indicator = null;
     }
+
+    this._settings = null;
   }
 
   enableOverlay() {
@@ -130,8 +130,8 @@ export default class PaperShellExtension extends Extension {
 
     Main.layoutManager.uiGroup.add_child(this._overlay);
 
-    // Sync the overlay's initial opacity with the slider's value
-    this.setOpacity(this._indicator.getSliderValue());
+    // Fetch saved opacity
+    this.setOpacity(this._settings.get_double("opacity"));
   }
 
   disableOverlay() {

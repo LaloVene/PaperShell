@@ -6,17 +6,14 @@ import { ExtensionPreferences } from "resource:///org/gnome/Shell/Extensions/js/
 export default class PaperShellPreferences extends ExtensionPreferences {
   fillPreferencesWindow(window) {
     const settings = this.getSettings();
-
     const page = new Adw.PreferencesPage();
-    const group = new Adw.PreferencesGroup({
-      title: "Appearance",
-      description: "Configure how the paper texture looks on your screen.",
-    });
 
-    // Layout row
+    // --- APPEARANCE GROUP ---
+    const appearanceGroup = new Adw.PreferencesGroup({ title: "Appearance" });
+
     const opacityRow = new Adw.ActionRow({
       title: "Texture Intensity",
-      subtitle: "Recommended: 0.3. Max is safely capped in the engine.",
+      subtitle: "Recommended: 0.3. Max is safely capped.",
     });
 
     // GTK Scale (Slider)
@@ -43,10 +40,39 @@ export default class PaperShellPreferences extends ExtensionPreferences {
       Gio.SettingsBindFlags.DEFAULT,
     );
 
-    // Assemble the UI
     opacityRow.add_suffix(slider);
-    group.add(opacityRow);
-    page.add(group);
+    appearanceGroup.add(opacityRow);
+
+    // BEHAVIOR GROUP
+    const behaviorGroup = new Adw.PreferencesGroup({ title: "Behavior" });
+
+    const fullscreenRow = new Adw.SwitchRow({
+      title: "Hide in Fullscreen",
+      subtitle: "Automatically disable texture when watching videos or gaming.",
+    });
+    settings.bind(
+      "hide-in-fullscreen",
+      fullscreenRow,
+      "active",
+      Gio.SettingsBindFlags.DEFAULT,
+    );
+
+    const nightLightRow = new Adw.SwitchRow({
+      title: "Sync with Night Light",
+      subtitle: "Automatically turn on/off when system Night Light is toggled.",
+    });
+    settings.bind(
+      "sync-night-light",
+      nightLightRow,
+      "active",
+      Gio.SettingsBindFlags.DEFAULT,
+    );
+
+    behaviorGroup.add(fullscreenRow);
+    behaviorGroup.add(nightLightRow);
+
+    page.add(appearanceGroup);
+    page.add(behaviorGroup);
     window.add(page);
   }
 }

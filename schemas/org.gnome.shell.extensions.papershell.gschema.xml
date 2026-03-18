@@ -4,12 +4,18 @@
     <key name="opacity" type="d">
       <default>0.3</default>
       <summary>Texture Opacity</summary>
-      <description>The opacity level of the noise texture (0.0 to 1.0).</description>
     </key>
     <key name="enabled-state" type="b">
       <default>true</default>
       <summary>Extension Toggle State</summary>
-      <description>Whether the texture is currently enabled in Quick Settings.</description>
+    </key>
+    <key name="hide-in-fullscreen" type="b">
+      <default>true</default>
+      <summary>Hide overlay in fullscreen</summary>
+    </key>
+    <key name="sync-night-light" type="b">
+      <default>false</default>
+      <summary>Sync with System Night Light</summary>
     </key>
   </schema>
 </schemalist>

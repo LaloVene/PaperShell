@@ -1,6 +1,7 @@
 import GObject from "gi://GObject";
 import St from "gi://St";
 import Clutter from "gi://Clutter";
+import Gio from "gi://Gio";
 
 import {
   Extension,
@@ -12,7 +13,7 @@ import {
   SystemIndicator,
 } from "resource:///org/gnome/shell/ui/quickSettings.js";
 
-// 1. Create the Quick Settings Toggle
+// Create the Quick Settings Toggle
 const PaperShellToggle = GObject.registerClass(
   class PaperShellToggle extends QuickToggle {
     _init(extension) {
@@ -21,19 +22,8 @@ const PaperShellToggle = GObject.registerClass(
         iconName: "view-reveal-symbolic",
         toggleMode: true,
       });
-      this._extension = extension;
-
       // Bind the toggle state to the GSettings
-      this._extension._settings.bind("enabled-state", this, "checked", 0);
-
-      // Listen for clicks
-      this.connect("clicked", () => {
-        if (this.checked) {
-          this._extension.enableOverlay();
-        } else {
-          this._extension.disableOverlay();
-        }
-      });
+      extension._settings.bind("enabled-state", this, "checked", 0);
     }
   },
 );
@@ -51,10 +41,6 @@ const PaperShellIndicator = GObject.registerClass(
 export default class PaperShellExtension extends Extension {
   enable() {
     this._overlay = null;
-    this._overviewShowingId = null;
-    this._overviewHidingId = null;
-    this._settingsChangedId = null;
-
     // Load settings database
     this._settings = this.getSettings();
 
@@ -62,19 +48,67 @@ export default class PaperShellExtension extends Extension {
     this._indicator = new PaperShellIndicator(this);
     Main.panel.statusArea.quickSettings.addExternalIndicator(this._indicator);
 
-    // Listen to changes from the Settings app
-    this._settingsChangedId = this._settings.connect("changed::opacity", () => {
+    // STATE LISTENER
+    this._stateChangedId = this._settings.connect(
+      "changed::enabled-state",
+      () => {
+        if (this._settings.get_boolean("enabled-state")) {
+          this.enableOverlay();
+        } else {
+          this.disableOverlay();
+        }
+      },
+    );
+
+    this._opacityChangedId = this._settings.connect("changed::opacity", () => {
       this.setOpacity(this._settings.get_double("opacity"));
+    });
+
+    // NIGHT LIGHT SYNC
+    this._colorSettings = new Gio.Settings({
+      schema_id: "org.gnome.settings-daemon.plugins.color",
+    });
+    this._nightLightId = this._colorSettings.connect(
+      "changed::night-light-enabled",
+      () => {
+        if (this._settings.get_boolean("sync-night-light")) {
+          let nlEnabled = this._colorSettings.get_boolean(
+            "night-light-enabled",
+          );
+          this._settings.set_boolean("enabled-state", nlEnabled);
+        }
+      },
+    );
+
+    // FULLSCREEN DETECTION
+    this._fullscreenId = global.display.connect("in-fullscreen-changed", () => {
+      if (!this._overlay || !this._settings.get_boolean("enabled-state"))
+        return;
+
+      let focusWindow = global.display.get_focus_window();
+      let isFullscreen = focusWindow ? focusWindow.is_fullscreen() : false;
+
+      if (isFullscreen && this._settings.get_boolean("hide-in-fullscreen")) {
+        this._overlay.hide();
+      } else {
+        if (!Main.overview.visible) this._overlay.show();
+      }
     });
 
     // Hide the overlay when entering the overview: allows for drag and drop
     this._overviewShowingId = Main.overview.connect("showing", () => {
       if (this._overlay) this._overlay.hide();
     });
-
     this._overviewHidingId = Main.overview.connect("hiding", () => {
+      let focusWindow = global.display.get_focus_window();
+      let isFullscreen = focusWindow ? focusWindow.is_fullscreen() : false;
+
       if (this._overlay && this._settings.get_boolean("enabled-state")) {
-        this._overlay.show();
+        if (
+          !(isFullscreen && this._settings.get_boolean("hide-in-fullscreen"))
+        ) {
+          this._overlay.show();
+        }
       }
     });
 
@@ -85,18 +119,15 @@ export default class PaperShellExtension extends Extension {
   }
 
   disable() {
-    if (this._overviewShowingId) {
+    if (this._stateChangedId) this._settings.disconnect(this._stateChangedId);
+    if (this._opacityChangedId)
+      this._settings.disconnect(this._opacityChangedId);
+    if (this._nightLightId) this._colorSettings.disconnect(this._nightLightId);
+    if (this._fullscreenId) global.display.disconnect(this._fullscreenId);
+    if (this._overviewShowingId)
       Main.overview.disconnect(this._overviewShowingId);
-      this._overviewShowingId = null;
-    }
-    if (this._overviewHidingId) {
+    if (this._overviewHidingId)
       Main.overview.disconnect(this._overviewHidingId);
-      this._overviewHidingId = null;
-    }
-    if (this._settingsChangedId) {
-      this._settings.disconnect(this._settingsChangedId);
-      this._settingsChangedId = null;
-    }
 
     this.disableOverlay();
 
@@ -106,6 +137,7 @@ export default class PaperShellExtension extends Extension {
     }
 
     this._settings = null;
+    this._colorSettings = null;
   }
 
   enableOverlay() {

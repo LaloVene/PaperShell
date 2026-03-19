@@ -35,6 +35,11 @@ const PaperShellIndicator = GObject.registerClass(
       super._init();
       this.quickSettingsItems.push(new PaperShellToggle(extension));
     }
+
+    destroy() {
+      this.quickSettingsItems.forEach((item) => item.destroy());
+      super.destroy();
+    }
   },
 );
 

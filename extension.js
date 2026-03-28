@@ -50,8 +50,13 @@ export default class PaperShellExtension extends Extension {
     this._settings = this.getSettings();
 
     // Setup Quick Settings
-    this._indicator = new PaperShellIndicator(this);
-    Main.panel.statusArea.quickSettings.addExternalIndicator(this._indicator);
+    this._updateIndicator();
+
+    // Listen for changes to the Show Button switch
+    this._showToggleId = this._settings.connect(
+      "changed::show-quick-toggle",
+      () => this._updateIndicator(),
+    );
 
     // STATE LISTENER
     this._stateChangedId = this._settings.connect(
@@ -123,7 +128,21 @@ export default class PaperShellExtension extends Extension {
     }
   }
 
+  // Manage the Quick Settings button
+  _updateIndicator() {
+    const show = this._settings.get_boolean("show-quick-toggle");
+
+    if (show && !this._indicator) {
+      this._indicator = new PaperShellIndicator(this);
+      Main.panel.statusArea.quickSettings.addExternalIndicator(this._indicator);
+    } else if (!show && this._indicator) {
+      this._indicator.destroy();
+      this._indicator = null;
+    }
+  }
+
   disable() {
+    if (this._showToggleId) this._settings.disconnect(this._showToggleId);
     if (this._stateChangedId) this._settings.disconnect(this._stateChangedId);
     if (this._opacityChangedId)
       this._settings.disconnect(this._opacityChangedId);

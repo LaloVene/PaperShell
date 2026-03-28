@@ -46,6 +46,17 @@ export default class PaperShellPreferences extends ExtensionPreferences {
     // BEHAVIOR GROUP
     const behaviorGroup = new Adw.PreferencesGroup({ title: "Behavior" });
 
+    const toggleVisibleRow = new Adw.SwitchRow({
+      title: "Show Quick Settings Toggle",
+      subtitle: "Add or remove the PaperShell button from the system menu.",
+    });
+    settings.bind(
+      "show-quick-toggle",
+      toggleVisibleRow,
+      "active",
+      Gio.SettingsBindFlags.DEFAULT,
+    );
+
     const fullscreenRow = new Adw.SwitchRow({
       title: "Hide in Fullscreen",
       subtitle: "Automatically disable texture when watching videos or gaming.",
@@ -70,6 +81,7 @@ export default class PaperShellPreferences extends ExtensionPreferences {
 
     behaviorGroup.add(fullscreenRow);
     behaviorGroup.add(nightLightRow);
+    behaviorGroup.add(toggleVisibleRow);
 
     page.add(appearanceGroup);
     page.add(behaviorGroup);

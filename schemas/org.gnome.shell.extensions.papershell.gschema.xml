@@ -9,6 +9,10 @@
       <default>true</default>
       <summary>Extension Toggle State</summary>
     </key>
+    <key name="show-quick-toggle" type="b">
+      <default>true</default>
+      <summary>Show button in Quick Settings</summary>
+    </key>
     <key name="hide-in-fullscreen" type="b">
       <default>true</default>
       <summary>Hide overlay in fullscreen</summary>

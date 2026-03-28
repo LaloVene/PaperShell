@@ -120,6 +120,9 @@ export default class PaperShellExtension extends Extension {
       this._indicator = new PaperShellIndicator(this);
       Main.panel.statusArea.quickSettings.addExternalIndicator(this._indicator);
     } else if (!show && this._indicator) {
+      if (!this._settings.get_boolean("enabled-state"))
+        this._settings.set_boolean("enabled-state", true);
+
       this._indicator.destroy();
       this._indicator = null;
     }

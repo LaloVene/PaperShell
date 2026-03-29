@@ -1,7 +1,7 @@
 {
   "uuid": "papershell@lalovene.github.com",
   "name": "PaperShell",
-  "version": 4,
+  "version": 5,
   "description": "Adds a subtle noise texture to reduce eye strain.",
   "settings-schema": "org.gnome.shell.extensions.papershell",
   "shell-version": ["46", "47", "48", "49", "50"],

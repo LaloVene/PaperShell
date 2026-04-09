@@ -13,7 +13,7 @@ export default class PaperShellPreferences extends ExtensionPreferences {
 
     const opacityRow = new Adw.ActionRow({
       title: "Texture Intensity",
-      subtitle: "Recommended: 0.3. Max is safely capped.",
+      subtitle: "Default: 0.2",
     });
 
     // GTK Scale (Slider)

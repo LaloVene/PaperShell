@@ -1,4 +1,5 @@
 import GObject from "gi://GObject";
+import Cairo from "cairo";
 import St from "gi://St";
 import Clutter from "gi://Clutter";
 import Gio from "gi://Gio";
@@ -40,6 +41,88 @@ const PaperShellIndicator = GObject.registerClass(
     destroy() {
       this.quickSettingsItems.forEach((item) => item.destroy());
       super.destroy();
+    }
+  },
+);
+
+const NOISE_TILE_SIZE = 256;
+
+const PaperShellNoiseOverlay = GObject.registerClass(
+  class PaperShellNoiseOverlay extends St.DrawingArea {
+    _init() {
+      super._init({
+        reactive: false,
+        can_focus: false,
+        x: 0,
+        y: 0,
+      });
+
+      this._noiseTile = null;
+      this._noisePattern = null;
+    }
+
+    _destroyNoiseResources() {
+      this._noisePattern = null;
+
+      if (!this._noiseTile)
+        return;
+
+      this._noiseTile.finish();
+      this._noiseTile = null;
+    }
+
+    ensureNoiseTile() {
+      if (this._noisePattern)
+        return;
+
+      this._destroyNoiseResources();
+
+      const surface = new Cairo.ImageSurface(
+        Cairo.Format.ARGB32,
+        NOISE_TILE_SIZE,
+        NOISE_TILE_SIZE,
+      );
+      const cr = new Cairo.Context(surface);
+
+      cr.setOperator(Cairo.Operator.CLEAR);
+      cr.paint();
+      cr.setOperator(Cairo.Operator.OVER);
+
+      for (let y = 0; y < NOISE_TILE_SIZE; y++) {
+        for (let x = 0; x < NOISE_TILE_SIZE; x++) {
+          const shade = Math.random();
+          cr.setSourceRGBA(shade, shade, shade, 1);
+
+          cr.rectangle(x, y, 1, 1);
+          cr.fill();
+        }
+      }
+
+      cr.$dispose();
+      surface.flush();
+
+      const pattern = new Cairo.SurfacePattern(surface);
+      pattern.setExtend(Cairo.Extend.REPEAT);
+
+      this._noiseTile = surface;
+      this._noisePattern = pattern;
+      this.queue_repaint();
+    }
+
+    vfunc_repaint() {
+      const cr = this.get_context();
+
+      if (this._noisePattern) {
+        cr.setSource(this._noisePattern);
+        cr.paint();
+      }
+
+      cr.$dispose();
+    }
+
+    vfunc_destroy() {
+      this._destroyNoiseResources();
+      super.vfunc_destroy();
     }
   },
 );
@@ -150,14 +233,8 @@ export default class PaperShellExtension extends Extension {
   enableOverlay() {
     if (this._overlay) return;
 
-    // Create the fullscreen, click-through widget
-    this._overlay = new St.Widget({
-      style_class: "papersrc-overlay",
-      reactive: false, // lets you click through it
-      can_focus: false,
-      x: 0,
-      y: 0,
-    });
+    this._overlay = new PaperShellNoiseOverlay();
+    this._overlay.ensureNoiseTile();
 
     // Binds the overlay to all monitors
     this._overlay.add_constraint(

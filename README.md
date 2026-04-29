@@ -2,7 +2,14 @@
 
 # PaperShell 📜
 
+<div align="center">
+
 PaperShell is a GNOME Shell extension that draws a light paper-like grain over the desktop. The effect is subtle by design: the goal is to take the edge off large flat areas of color without getting in the way of normal use.
+
+[![GNOME Shell](https://img.shields.io/badge/GNOME_Shell-46_|_47_|_48_|_49_|_50-4A86CF?style=flat-square&logo=gnome&logoColor=white)](https://extensions.gnome.org/extension/9524/papershell/)
+[![License](https://img.shields.io/badge/License-GPL_3.0-green?style=flat-square)](LICENSE)
+
+</div>
 
 #### Before:
 

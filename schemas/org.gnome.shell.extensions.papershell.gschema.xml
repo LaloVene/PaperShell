@@ -5,6 +5,11 @@
       <default>0.2</default>
       <summary>Texture Opacity</summary>
     </key>
+    <key name="noise-brightness" type="d">
+      <default>0.5</default>
+      <summary>Noise Brightness</summary>
+      <range min="0.0" max="1.0"/>
+    </key>
     <key name="enabled-state" type="b">
       <default>true</default>
       <summary>Extension Toggle State</summary>

@@ -71,8 +71,8 @@ const PaperShellNoiseOverlay = GObject.registerClass(
       this._noiseTile = null;
     }
 
-    ensureNoiseTile() {
-      if (this._noisePattern)
+    ensureNoiseTile(brightness = 0.5, forceRebuild = false) {
+      if (this._noisePattern && !forceRebuild)
         return;
 
       this._destroyNoiseResources();
@@ -88,9 +88,13 @@ const PaperShellNoiseOverlay = GObject.registerClass(
       cr.paint();
       cr.setOperator(Cairo.Operator.OVER);
 
+      const clampedBrightness = Math.max(0, Math.min(1, brightness));
+      const spread = 0.35;
+
       for (let y = 0; y < NOISE_TILE_SIZE; y++) {
         for (let x = 0; x < NOISE_TILE_SIZE; x++) {
-          const shade = Math.random();
+          const jitter = (Math.random() - 0.5) * spread;
+          const shade = Math.max(0, Math.min(1, clampedBrightness + jitter));
           cr.setSourceRGBA(shade, shade, shade, 1);
 
           cr.rectangle(x, y, 1, 1);
@@ -158,6 +162,18 @@ export default class PaperShellExtension extends Extension {
       this.setOpacity(this._settings.get_double("opacity"));
     });
 
+    this._brightnessChangedId = this._settings.connect(
+      "changed::noise-brightness",
+      () => {
+        if (this._overlay) {
+          this._overlay.ensureNoiseTile(
+            this._settings.get_double("noise-brightness"),
+            true,
+          );
+        }
+      },
+    );
+
     // NIGHT LIGHT SYNC
     this._colorSettings = new Gio.Settings({
       schema_id: "org.gnome.settings-daemon.plugins.color",
@@ -216,6 +232,8 @@ export default class PaperShellExtension extends Extension {
     if (this._stateChangedId) this._settings.disconnect(this._stateChangedId);
     if (this._opacityChangedId)
       this._settings.disconnect(this._opacityChangedId);
+    if (this._brightnessChangedId)
+      this._settings.disconnect(this._brightnessChangedId);
     if (this._nightLightId) this._colorSettings.disconnect(this._nightLightId);
     if (this._fullscreenId) global.display.disconnect(this._fullscreenId);
 
@@ -234,7 +252,9 @@ export default class PaperShellExtension extends Extension {
     if (this._overlay) return;
 
     this._overlay = new PaperShellNoiseOverlay();
-    this._overlay.ensureNoiseTile();
+    this._overlay.ensureNoiseTile(
+      this._settings.get_double("noise-brightness"),
+    );
 
     // Binds the overlay to all monitors
     this._overlay.add_constraint(

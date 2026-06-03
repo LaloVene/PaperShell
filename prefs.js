@@ -43,6 +43,35 @@ export default class PaperShellPreferences extends ExtensionPreferences {
     opacityRow.add_suffix(slider);
     appearanceGroup.add(opacityRow);
 
+    const brightnessRow = new Adw.ActionRow({
+      title: "Noise Brightness",
+      subtitle: "Darker to lighter. Default: 0.5",
+    });
+
+    const brightnessSlider = Gtk.Scale.new_with_range(
+      Gtk.Orientation.HORIZONTAL,
+      0.0,
+      1.0,
+      0.05,
+    );
+
+    brightnessSlider.set_hexpand(true);
+    brightnessSlider.set_valign(Gtk.Align.CENTER);
+    brightnessSlider.set_draw_value(true);
+    brightnessSlider.set_digits(2);
+    brightnessSlider.set_value_pos(Gtk.PositionType.RIGHT);
+    brightnessSlider.set_size_request(200, -1);
+
+    settings.bind(
+      "noise-brightness",
+      brightnessSlider.get_adjustment(),
+      "value",
+      Gio.SettingsBindFlags.DEFAULT,
+    );
+
+    brightnessRow.add_suffix(brightnessSlider);
+    appearanceGroup.add(brightnessRow);
+
     // BEHAVIOR GROUP
     const behaviorGroup = new Adw.PreferencesGroup({ title: "Behavior" });
 

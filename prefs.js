@@ -13,7 +13,7 @@ export default class PaperShellPreferences extends ExtensionPreferences {
 
     const opacityRow = new Adw.ActionRow({
       title: "Texture Intensity",
-      subtitle: "Default: 0.2",
+      subtitle: "Default: 0.3",
     });
 
     // GTK Scale (Slider)
@@ -45,7 +45,7 @@ export default class PaperShellPreferences extends ExtensionPreferences {
 
     const brightnessRow = new Adw.ActionRow({
       title: "Noise Brightness",
-      subtitle: "Darker to lighter. Default: 0.5",
+      subtitle: "Darker to lighter. Default: 0.4",
     });
 
     const brightnessSlider = Gtk.Scale.new_with_range(

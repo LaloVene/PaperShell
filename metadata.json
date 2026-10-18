@@ -4,6 +4,6 @@
   "version": 6,
   "description": "Adds a subtle noise texture to reduce eye strain.",
   "settings-schema": "org.gnome.shell.extensions.papershell",
-  "shell-version": ["46", "47", "48", "49", "50"],
+  "shell-version": ["46", "47", "48", "49", "50", "51"],
   "url": "https://github.com/LaloVene/PaperShell"
 }
